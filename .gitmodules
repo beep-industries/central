@@ -1,0 +1,18 @@
+[submodule "client"]
+	path = client
+	url = git@github.com:beep-industries/client.git
+[submodule "communities"]
+	path = communities
+	url = git@github.com:beep-industries/communities.git
+[submodule "real-time"]
+	path = real-time
+	url = git@github.com:beep-industries/real-time.git
+[submodule "user"]
+	path = user
+	url = git@github.com:beep-industries/user.git
+[submodule "message"]
+	path = message
+	url = git@github.com:beep-industries/message.git
+[submodule "authz"]
+	path = authz
+	url = git@github.com:beep-industries/authz.git
