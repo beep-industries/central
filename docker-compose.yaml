@@ -523,18 +523,19 @@ services:
   client:
     build:
       context: ./client
+      args:
+        - VITE_KEYCLOAK_CLIENT_ID=${VITE_KEYCLOAK_CLIENT_ID:-frontend}
+        - VITE_KEYCLOAK_AUTHORITY=${VITE_KEYCLOAK_AUTHORITY:-http://localhost:8080/realms/myrealm}
+        - VITE_USER_SERVICE_URL=${VITE_USER_SERVICE_URL:-http://localhost:3000}
+        - VITE_COMMUNITY_SERVICE_URL=${VITE_COMMUNITY_SERVICE_URL:-http://localhost:3003}
+        - VITE_REAL_TIME_URL=${VITE_REAL_TIME_URL:-http://localhost:4000}
+        - VITE_WEBRTC_BASE=${VITE_WEBRTC_BASE:-http://localhost:8080}
+        - VITE_MESSAGE_SERVICE_URL=${VITE_MESSAGE_SERVICE_URL:-http://localhost:3002}
       dockerfile: Dockerfile
     container_name: client
     ports:
       - "5173:5173"
     environment:
-      - VITE_KEYCLOAK_CLIENT_ID=frontend
-      - VITE_KEYCLOAK_AUTHORITY=http://localhost:8080/realms/myrealm
-      - VITE_USER_SERVICE_URL=http://localhost:3000
-      - VITE_COMMUNITY_SERVICE_URL=http://localhost:3003
-      - VITE_REAL_TIME_URL=http://localhost:4000
-      - VITE_WEBRTC_BASE=http://localhost:8080
-      - VITE_MESSAGE_SERVICE_URL=http://localhost:3002
       - NGINX_PORT=5173
     networks:
       - user_internal
