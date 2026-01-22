@@ -262,19 +262,30 @@ services:
       dockerfile: Dockerfile
       target: api
     container_name: user-service
-    env_file: ./user/.env
     environment:
+      # Database
+      USER_DB: ${USER_DB:-userservice}
+      USER_DB_USER: ${USER_DB_USER:-userservice}
+      USER_DB_PASSWORD: ${USER_DB_PASSWORD:-userservice}
       DATABASE_URL: postgres://${USER_DB_USER:-userservice}:${USER_DB_PASSWORD:-userservice}@user-db:5432/${USER_DB:-userservice}
+      # Server
       SERVER_HOST: 0.0.0.0
-      SERVER_PORT: 3000
-      HEALTH_PORT: 3001
+      SERVER_PORT: ${SERVER_PORT:-3000}
+      HEALTH_PORT: ${HEALTH_PORT:-3001}
+      # Keycloak
+      KEYCLOAK_DB: ${KEYCLOAK_DB:-keycloak}
+      KEYCLOAK_DB_USER: ${KEYCLOAK_DB_USER:-keycloak}
+      KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
       KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
       KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-myrealm}
       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-user-service}
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-ABvykyIUah2CcQPiRcvcgd7GA4MrEdx4}
+      # Other
       JWT_SECRET: ${JWT_SECRET:-mysecret}
-      RUST_LOG: info
+      RUST_LOG: ${RUST_LOG:-info}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
     ports:
       - "3000:3000"
@@ -326,25 +337,39 @@ services:
       context: ./communities
       dockerfile: Dockerfile
     container_name: communities-service
-    env_file: ./communities/.env
     environment:
+      # Database
       DATABASE_HOST: communities-db
-      DATABASE_PASSWORD: communities
-      DATABASE_USER: communities
       DATABASE_PORT: 5432
-      DATABASE_URL: postgres://communities:communities@communities-db:5432/communities
-      SPICEDB_ENDPOINT: http://spicedb:50051
-      KEYCLOAK_INTERNAL_URL: http://keycloak:8080
-      USER_SERVICE_URL: http://user-service:3001
-      RABBIT_URI: amqp://rabbitmq:5672
+      DATABASE_USER: ${COMMUNITIES_DATABASE_USER:-communities}
+      DATABASE_PASSWORD: ${COMMUNITIES_DATABASE_PASSWORD:-communities}
+      DATABASE_NAME: ${COMMUNITIES_DATABASE_NAME:-communities}
+      DATABASE_URL: postgres://${COMMUNITIES_DATABASE_USER:-communities}:${COMMUNITIES_DATABASE_PASSWORD:-communities}@communities-db:5432/${COMMUNITIES_DATABASE_NAME:-communities}
+      # Server Ports
+      API_PORT: ${COMMUNITIES_API_PORT:-8081}
+      HEALTH_PORT: ${COMMUNITIES_HEALTH_PORT:-8082}
+      # Services
+      SPICEDB_ENDPOINT: ${SPICEDB_ENDPOINT:-http://spicedb:50051}
+      SPICEDB_ENPOINT: ${SPICEDB_ENDPOINT:-http://spicedb:50051}
+      SPICEDB_TOKEN: ${SPICEDB_TOKEN:-foobar}
+      USER_SERVICE_URL: ${USER_SERVICE_URL:-http://user-service:3001}
+      # Keycloak
+      KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
+      KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-myrealm}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-user-service}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-ABvykyIUah2CcQPiRcvcgd7GA4MrEdx4}
+      # RabbitMQ
+      RABBIT_URI: ${RABBIT_URI:-amqp://guest:guest@rabbitmq:5672}
       ROUTING_CONFIG_PATH: /config/routing.yaml
-      CORS_ORIGINS: http://localhost:5173,https://beep.ovh
+      # CORS
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,https://beep.ovh}
     volumes:
       - ./communities/config/routing.yaml:/config/routing.yaml
     ports:
       - "${COMMUNITIES_API_PORT:-8081}:${COMMUNITIES_API_PORT:-8081}"
       - "${COMMUNITIES_HEALTH_PORT:-8082}:${COMMUNITIES_HEALTH_PORT:-8082}"
-      - "3003:3003"
+      - "3003:8081"
     networks:
       - user_internal
       - authz_communities
@@ -370,17 +395,24 @@ services:
       dockerfile: Dockerfile
     container_name: message-service
     environment:
+      # Database
       MONGODB_URI: mongodb://message-db:27017/messages
       DATABASE_URI: mongodb://message-db:27017/messages
       DATABASE_NAME: messages
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
-      ROUTING_CONFIG_PATH: /config/routing.yaml
-      JWT_SECRET_KEY: ${JWT_SECRET:-Key-Must-Be-at-least-32-bytes-in-length}
+      # Server Ports
       API_PORT: ${MESSAGE_API_PORT:-8083}
       HEALTH_PORT: ${MESSAGE_HEALTH_PORT:-9091}
+      # JWT
+      JWT_SECRET_KEY: ${JWT_SECRET:-Key-Must-Be-at-least-32-bytes-in-length}
+      # RabbitMQ
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672}
+      ROUTING_CONFIG_PATH: /config/routing.yaml
+      # Keycloak
+      KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
       KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-myrealm}
-      CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000,http://localhost,http://localhost:80,http://localhost:3002
+      # CORS
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000,http://localhost,http://localhost:80,http://localhost:3002}
     volumes:
       - ./message/config/routing.yaml:/config/routing.yaml
     ports:
@@ -412,9 +444,10 @@ services:
       dockerfile: Dockerfile
     container_name: realtime-service
     ports:
-      - "4000:4000"
+      - "${REALTIME_PORT:-4000}:4000"
     environment:
-      MIX_ENV: prod
+      # Phoenix
+      MIX_ENV: ${MIX_ENV:-prod}
       PORT: 4000
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:-please_generate_a_secret_key_base_using_mix_phx_gen_secret}
       PHX_HOST: ${PHX_HOST:-localhost}
