@@ -363,7 +363,7 @@ services:
       RABBIT_URI: ${RABBIT_URI:-amqp://guest:guest@rabbitmq:5672}
       ROUTING_CONFIG_PATH: /config/routing.yaml
       # CORS
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,https://beep.ovh}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost,https://beep.ovh}
     volumes:
       - ./communities/config/routing.yaml:/config/routing.yaml
     ports:
@@ -528,7 +528,15 @@ services:
       dockerfile: Dockerfile
     container_name: client
     ports:
-      - "80:8080"
+      - "80:5173"
+    environment:
+      - VITE_KEYCLOAK_CLIENT_ID=frontend
+      - VITE_KEYCLOAK_AUTHORITY=http://localhost:8080/realms/myrealm
+      - VITE_USER_SERVICE_URL=http://localhost:3000
+      - VITE_COMMUNITY_SERVICE_URL=http://localhost:3003
+      - VITE_REAL_TIME_URL=http://localhost:4000
+      - VITE_WEBRTC_BASE=http://localhost:8080
+      - VITE_MESSAGE_SERVICE_URL=http://localhost:3002
     networks:
       - user_internal
       - authz_communities
