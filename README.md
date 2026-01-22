@@ -18,23 +18,25 @@ git submodule update --init --recursive
 
 ## Quick Start
 
-### 1. Environment Configuration
+### 1. Starting the Full Stack
 
-Run the script to copy `.env.example` files to `.env` in each service:
-
-```bash
-./setup-env.sh
-```
-
-Then, configure the values in each created `.env` file according to your needs.
-
-### 2. Starting the Full Stack
-
-To start **all services**:
+To start **all services**, simply run:
 
 ```bash
 docker compose --profile all up -d
 ```
+
+All services come with sensible defaults and will work out of the box.
+
+### 2. Environment Configuration (Optional)
+
+If you need to override any environment variables:
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env` with your custom values. The docker-compose will automatically pick up your changes.
 
 ### 3. Developing a Specific Service
 
