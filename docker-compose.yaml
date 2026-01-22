@@ -76,7 +76,7 @@ services:
   # PostgreSQL for Communities Service
   communities-db:
     image: postgres:17
-    container_name: communities_postgres
+    container_name: communities-db
     environment:
       POSTGRES_DB: ${COMMUNITIES_DATABASE_NAME:-communities}
       POSTGRES_USER: ${COMMUNITIES_DATABASE_USER:-communities}
@@ -329,6 +329,10 @@ services:
     env_file: ./communities/.env
     environment:
       DATABASE_HOST: communities-db
+      DATABASE_PASSWORD: communities
+      DATABASE_USER: communities
+      DATABASE_PORT: 5432
+      DATABASE_URL: postgres://communities:communities@communities-db:5432/communities
       SPICEDB_ENDPOINT: http://spicedb:50051
       KEYCLOAK_INTERNAL_URL: http://keycloak:8080
       USER_SERVICE_URL: http://user-service:3001
@@ -369,19 +373,20 @@ services:
       MONGODB_URI: mongodb://message-db:27017/messages
       DATABASE_URI: mongodb://message-db:27017/messages
       DATABASE_NAME: messages
-      RABBIT_URI: amqp://guest:guest@rabbitmq:5672
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
       ROUTING_CONFIG_PATH: /config/routing.yaml
       JWT_SECRET_KEY: ${JWT_SECRET:-Key-Must-Be-at-least-32-bytes-in-length}
       API_PORT: ${MESSAGE_API_PORT:-8083}
       HEALTH_PORT: ${MESSAGE_HEALTH_PORT:-9091}
       KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-myrealm}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
+      CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000,http://localhost,http://localhost:80,http://localhost:3002
     volumes:
       - ./message/config/routing.yaml:/config/routing.yaml
     ports:
       - "${MESSAGE_API_PORT:-8083}:${MESSAGE_API_PORT:-8083}"
       - "${MESSAGE_HEALTH_PORT:-9091}:${MESSAGE_HEALTH_PORT:-9091}"
+      - "3002:8083"
     networks:
       - message_network
       - authz_communities
