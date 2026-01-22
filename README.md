@@ -1,76 +1,76 @@
 # Beep Central - Full Stack Docker Compose
 
-Ce repository contient la configuration Docker Compose pour démarrer l'ensemble de la stack Beep.
+This repository contains the Docker Compose configuration to start the entire Beep stack.
 
-## 🚀 Démarrage rapide
+## Quick Start
 
-### 1. Configuration des environnements
+### 1. Environment Configuration
 
-Exécutez le script pour copier les fichiers `.env.example` vers `.env` dans chaque service :
+Run the script to copy `.env.example` files to `.env` in each service:
 
 ```bash
 ./setup-env.sh
 ```
 
-Ensuite, configurez les valeurs dans chaque fichier `.env` créé selon vos besoins.
+Then, configure the values in each created `.env` file according to your needs.
 
-### 2. Démarrage de la stack complète
+### 2. Starting the Full Stack
 
-Pour démarrer **tous les services** :
+To start **all services**:
 
 ```bash
 docker compose --profile all up -d
 ```
 
-### 3. Développement sur un service spécifique
+### 3. Developing a Specific Service
 
-Le système de profils permet de démarrer toute l'infrastructure **SAUF** le service sur lequel vous travaillez.
+The profile system allows you to start all infrastructure **EXCEPT** the service you're working on.
 
-#### Travailler sur le service User
+#### Working on the User Service
 
 ```bash
-# Démarre tout SAUF user-api (vous le lancez en local)
+# Starts everything EXCEPT user-api (you run it locally)
 docker compose --profile user up -d
 ```
 
-#### Travailler sur le service Communities
+#### Working on the Communities Service
 
 ```bash
-# Démarre tout SAUF communities-api (vous le lancez en local)
+# Starts everything EXCEPT communities-api (you run it locally)
 docker compose --profile communities up -d
 ```
 
-#### Travailler sur le service Message
+#### Working on the Message Service
 
 ```bash
-# Démarre tout SAUF message-api (vous le lancez en local)
+# Starts everything EXCEPT message-api (you run it locally)
 docker compose --profile message up -d
 ```
 
-#### Travailler sur le service Real-time
+#### Working on the Real-time Service
 
 ```bash
-# Démarre tout SAUF realtime-api (vous le lancez en local)
+# Starts everything EXCEPT realtime-api (you run it locally)
 docker compose --profile realtime up -d
 ```
 
-#### Travailler sur le service Authz
+#### Working on the Authz Service
 
 ```bash
-# Démarre tout SAUF authz-listeners (vous le lancez en local)
+# Starts everything EXCEPT authz-listeners (you run it locally)
 docker compose --profile authz up -d
 ```
 
-#### Travailler sur le Client (Frontend)
+#### Working on the Client (Frontend)
 
 ```bash
-# Démarre tout SAUF client (vous le lancez en local)
+# Starts everything EXCEPT client (you run it locally)
 docker compose --profile client up -d
 ```
 
-## 📋 Services disponibles
+## Available Services
 
-### Infrastructure (toujours démarrée)
+### Infrastructure (always started)
 
 - **user-db** (PostgreSQL) - Port 5432
 - **keycloak-db** (PostgreSQL)
@@ -90,41 +90,41 @@ docker compose --profile client up -d
 - **authz-listeners**
 - **client** - Port 80
 
-## 🛠️ Commandes utiles
+## Useful Commands
 
-### Voir les logs d'un service
+### View logs for a service
 
 ```bash
 docker compose logs -f <service-name>
 ```
 
-### Arrêter tous les services
+### Stop all services
 
 ```bash
 docker compose down
 ```
 
-### Arrêter et supprimer les volumes
+### Stop and remove volumes
 
 ```bash
 docker compose down -v
 ```
 
-### Reconstruire un service
+### Rebuild a service
 
 ```bash
 docker compose build <service-name>
 ```
 
-### Vérifier l'état des services
+### Check service status
 
 ```bash
 docker compose ps
 ```
 
-## 🌐 Accès aux services
+## Service Access
 
-- **Keycloak Admin**: http://localhost:8080/admin (admin/admin par défaut)
+- **Keycloak Admin**: http://localhost:8080/admin (admin/admin by default)
 - **RabbitMQ Management**: http://localhost:15672 (guest/guest)
 - **User API**: http://localhost:3000
 - **Communities API**: http://localhost:8081
@@ -132,27 +132,27 @@ docker compose ps
 - **Real-time API**: http://localhost:4000
 - **Client**: http://localhost
 
-## 📁 Structure
+## Structure
 
 ```
 .
-├── authz/              # Service d'autorisation
+├── authz/              # Authorization service
 ├── client/             # Frontend
-├── communities/        # Service des communautés
-├── message/            # Service de messagerie
-├── real-time/          # Service temps réel
-├── user/               # Service utilisateur
-├── docker-compose.yaml # Configuration principale
-└── setup-env.sh        # Script de configuration
+├── communities/        # Communities service
+├── message/            # Messaging service
+├── real-time/          # Real-time service
+├── user/               # User service
+├── docker-compose.yaml # Main configuration
+└── setup-env.sh        # Setup script
 ```
 
-## 🔧 Variables d'environnement
+## Environment Variables
 
-Chaque service possède son propre fichier `.env`. Consultez les fichiers `.env.example` de chaque service pour voir les variables disponibles.
+Each service has its own `.env` file. Check the `.env.example` files of each service to see the available variables.
 
-## ⚠️ Notes importantes
+## Important Notes
 
-1. Assurez-vous d'avoir Docker et Docker Compose installés
-2. Les services d'infrastructure démarrent automatiquement
-3. Les services d'application nécessitent un profil pour démarrer
-4. Modifiez les mots de passe par défaut avant de déployer en production
+1. Make sure you have Docker and Docker Compose installed
+2. Infrastructure services start automatically
+3. Application services require a profile to start
+4. Change the default passwords before deploying to production
