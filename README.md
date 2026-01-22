@@ -2,6 +2,20 @@
 
 This repository contains the Docker Compose configuration to start the entire Beep stack.
 
+## Clone the Repository
+
+To clone this repository with all its submodules, use:
+
+```bash
+git clone --recurse-submodules git@github.com:beep-industries/central.git
+```
+
+If you've already cloned the repository without submodules, you can initialize them with:
+
+```bash
+git submodule update --init --recursive
+```
+
 ## Quick Start
 
 ### 1. Environment Configuration
