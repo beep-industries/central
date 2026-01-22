@@ -478,8 +478,7 @@ services:
     container_name: media-server-sfu
     restart: unless-stopped
     network_mode: host
-    command:
-      ["/app/sfu-server", "-f", "--grpc-addr", "127.0.0.1:50052"]
+    command: ["/app/sfu-server", "-f", "--grpc-addr", "127.0.0.1:50052"]
     profiles:
       - user
       - communities
@@ -487,7 +486,6 @@ services:
       - authz
       - client
       - all
-
 
   # Authz Listeners
   authz-listeners:
@@ -528,7 +526,7 @@ services:
       dockerfile: Dockerfile
     container_name: client
     ports:
-      - "80:5173"
+      - "5173:5173"
     environment:
       - VITE_KEYCLOAK_CLIENT_ID=frontend
       - VITE_KEYCLOAK_AUTHORITY=http://localhost:8080/realms/myrealm
@@ -537,6 +535,7 @@ services:
       - VITE_REAL_TIME_URL=http://localhost:4000
       - VITE_WEBRTC_BASE=http://localhost:8080
       - VITE_MESSAGE_SERVICE_URL=http://localhost:3002
+      - NGINX_PORT=5173
     networks:
       - user_internal
       - authz_communities
