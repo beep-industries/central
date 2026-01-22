@@ -10,7 +10,7 @@ To clone this repository with all its submodules, use:
 git clone --recurse-submodules git@github.com:beep-industries/central.git
 ```
 
-If you've already cloned the repository without submodules, you can initialize them with:
+If you've already cloned the repository without submodules, you can initialize/update them with:
 
 ```bash
 git submodule update --init --recursive
