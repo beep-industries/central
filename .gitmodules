@@ -16,3 +16,6 @@
 [submodule "authz"]
 	path = authz
 	url = git@github.com:beep-industries/authz.git
+[submodule "media-server"]
+	path = media-server
+	url = git@github.com:beep-industries/media-server.git

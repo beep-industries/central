@@ -418,14 +418,12 @@ services:
       PORT: 4000
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:-please_generate_a_secret_key_base_using_mix_phx_gen_secret}
       PHX_HOST: ${PHX_HOST:-localhost}
-      KEYCLOAK_URL: ${KEYCLOAK_URL:-http://keycloak:8080}
+      KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-myrealm}
-      REDIS_URL: redis://redis:6379/0
-      SFU_GRPC_ADDR: ${SFU_GRPC_ADDR:-127.0.0.1:50051}
-      RABBIT_URI: amqp://guest:guest@rabbitmq:5672
-    networks:
-      - realtime_network
-      - authz_communities
+      REDIS_URL: redis://localhost:6379/0
+      SFU_GRPC_ADDR: ${SFU_GRPC_ADDR:-localhost:50052}
+      RABBIT_URI: amqp://guest:guest@localhost:5672
+    network_mode: host
     restart: unless-stopped
     depends_on:
       redis:
@@ -439,6 +437,24 @@ services:
       - authz
       - client
       - all
+
+  sfu:
+    build:
+      context: ./media-server
+      dockerfile: Dockerfile
+    container_name: media-server-sfu
+    restart: unless-stopped
+    network_mode: host
+    command:
+      ["/app/sfu-server", "-f", "--grpc-addr", "127.0.0.1:50052"]
+    profiles:
+      - user
+      - communities
+      - message
+      - authz
+      - client
+      - all
+
 
   # Authz Listeners
   authz-listeners:
