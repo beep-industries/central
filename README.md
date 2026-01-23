@@ -16,6 +16,12 @@ If you've already cloned the repository without submodules, you can initialize/u
 git submodule update --init --recursive
 ```
 
+If you need to update submodules later, run:
+
+```bash
+git submodule update --remote --merge
+```
+
 ## Quick Start
 
 ### 1. Starting the Full Stack
@@ -23,7 +29,7 @@ git submodule update --init --recursive
 To start **all services**, simply run:
 
 ```bash
-docker compose --profile all up -d
+docker compose --profile all up -d --build
 ```
 
 All services come with sensible defaults and will work out of the box.
@@ -46,42 +52,42 @@ The profile system allows you to start all infrastructure **EXCEPT** the service
 
 ```bash
 # Starts everything EXCEPT user-api (you run it locally)
-docker compose --profile user up -d
+docker compose --profile user up -d --build
 ```
 
 #### Working on the Communities Service
 
 ```bash
 # Starts everything EXCEPT communities-api (you run it locally)
-docker compose --profile communities up -d
+docker compose --profile communities up -d --build
 ```
 
 #### Working on the Message Service
 
 ```bash
 # Starts everything EXCEPT message-api (you run it locally)
-docker compose --profile message up -d
+docker compose --profile message up -d --build
 ```
 
 #### Working on the Real-time Service
 
 ```bash
 # Starts everything EXCEPT realtime-api (you run it locally)
-docker compose --profile realtime up -d
+docker compose --profile realtime up -d --build
 ```
 
 #### Working on the Authz Service
 
 ```bash
 # Starts everything EXCEPT authz-listeners (you run it locally)
-docker compose --profile authz up -d
+docker compose --profile authz up -d --build
 ```
 
 #### Working on the Client (Frontend)
 
 ```bash
 # Starts everything EXCEPT client (you run it locally)
-docker compose --profile client up -d
+docker compose --profile client up -d --build
 ```
 
 ## Available Services
@@ -117,19 +123,14 @@ docker compose logs -f <service-name>
 ### Stop all services
 
 ```bash
-docker compose down
+docker compose --profile <used-profile> down
+
 ```
 
 ### Stop and remove volumes
 
 ```bash
-docker compose down -v
-```
-
-### Rebuild a service
-
-```bash
-docker compose build <service-name>
+docker compose --profile <used-profile> down -v
 ```
 
 ### Check service status
@@ -162,13 +163,8 @@ docker compose ps
 └── setup-env.sh        # Setup script
 ```
 
-## Environment Variables
-
-Each service has its own `.env` file. Check the `.env.example` files of each service to see the available variables.
-
 ## Important Notes
 
 1. Make sure you have Docker and Docker Compose installed
 2. Infrastructure services start automatically
 3. Application services require a profile to start
-4. Change the default passwords before deploying to production
