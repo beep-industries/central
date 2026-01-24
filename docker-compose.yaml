@@ -536,6 +536,8 @@ services:
       - type: bind
         source: ./content/.env
         target: /opt/app/.env
+        bind:
+          create_host_path: false
     profiles:
       - user
       - communities
