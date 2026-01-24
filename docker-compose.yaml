@@ -553,12 +553,12 @@ services:
       - "3902:3902"
       - "3903:3903"
     restart: unless-stopped
-    tty: true
     networks:
       - garage_network
     volumes:
       - ./content/dev/garage.toml:/etc/garage.toml
       - garage_meta:/tmp/meta/
+      - garage_data:/tmp/data/
     profiles:
       - user
       - communities
