@@ -1,567 +1,590 @@
 services:
-  # =============================================================================
-  # INFRASTRUCTURE SERVICES (toujours démarrés)
-  # =============================================================================
+    # =============================================================================
+    # INFRASTRUCTURE SERVICES (toujours démarrés)
+    # =============================================================================
 
-  # PostgreSQL for User Service
-  user-db:
-    image: postgres:18.1
-    container_name: user-db
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: ${USER_DB:-userservice}
-      POSTGRES_USER: ${USER_DB_USER:-userservice}
-      POSTGRES_PASSWORD: ${USER_DB_PASSWORD:-userservice}
-    volumes:
-      - user_postgres_data:/var/lib/postgresql/18/docker
-    networks:
-      - user_internal
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${USER_DB_USER:-userservice}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
+    # PostgreSQL for User Service
+    user-db:
+        image: postgres:18.1
+        container_name: user-db
+        ports:
+            - "5432:5432"
+        environment:
+            POSTGRES_DB: ${USER_DB:-userservice}
+            POSTGRES_USER: ${USER_DB_USER:-userservice}
+            POSTGRES_PASSWORD: ${USER_DB_PASSWORD:-userservice}
+        volumes:
+            - user_postgres_data:/var/lib/postgresql/18/docker
+        networks:
+            - user_internal
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${USER_DB_USER:-userservice}"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        restart: unless-stopped
 
-  # PostgreSQL for Keycloak
-  keycloak-db:
-    image: postgres:17.7
-    container_name: keycloak-db
-    environment:
-      POSTGRES_DB: ${KEYCLOAK_DB:-keycloak}
-      POSTGRES_USER: ${KEYCLOAK_DB_USER:-keycloak}
-      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak}
-    volumes:
-      - keycloak_postgres_data:/var/lib/postgresql/data
-    networks:
-      - user_internal
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${KEYCLOAK_DB_USER:-keycloak}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
+    # PostgreSQL for Keycloak
+    keycloak-db:
+        image: postgres:17.7
+        container_name: keycloak-db
+        environment:
+            POSTGRES_DB: ${KEYCLOAK_DB:-keycloak}
+            POSTGRES_USER: ${KEYCLOAK_DB_USER:-keycloak}
+            POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak}
+        volumes:
+            - keycloak_postgres_data:/var/lib/postgresql/data
+        networks:
+            - user_internal
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${KEYCLOAK_DB_USER:-keycloak}"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        restart: unless-stopped
 
-  # Keycloak
-  keycloak:
-    image: quay.io/keycloak/keycloak:26.4.2
-    container_name: keycloak
-    command: start --import-realm
-    environment:
-      KC_HOSTNAME: localhost
-      KC_HOSTNAME_PORT: 8080
-      KC_HOSTNAME_STRICT_BACKCHANNEL: false
-      KC_HTTP_ENABLED: true
-      KC_HOSTNAME_STRICT_HTTPS: false
-      KC_HEALTH_ENABLED: true
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://keycloak-db/${KEYCLOAK_DB:-keycloak}
-      KC_DB_USERNAME: ${KEYCLOAK_DB_USER:-keycloak}
-      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak}
-    volumes:
-      - ./user/keycloak-config:/opt/keycloak/data/import:ro
-    ports:
-      - "8080:8080"
-    networks:
-      - user_internal
-      - authz_communities
-    restart: unless-stopped
-    depends_on:
-      keycloak-db:
-        condition: service_healthy
+    # Keycloak
+    keycloak:
+        image: quay.io/keycloak/keycloak:26.4.2
+        container_name: keycloak
+        command: start --import-realm
+        environment:
+            KC_HOSTNAME: localhost
+            KC_HOSTNAME_PORT: 8080
+            KC_HOSTNAME_STRICT_BACKCHANNEL: false
+            KC_HTTP_ENABLED: true
+            KC_HOSTNAME_STRICT_HTTPS: false
+            KC_HEALTH_ENABLED: true
+            KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+            KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+            KC_DB: postgres
+            KC_DB_URL: jdbc:postgresql://keycloak-db/${KEYCLOAK_DB:-keycloak}
+            KC_DB_USERNAME: ${KEYCLOAK_DB_USER:-keycloak}
+            KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak}
+        volumes:
+            - ./user/keycloak-config:/opt/keycloak/data/import:ro
+        ports:
+            - "8080:8080"
+        networks:
+            - user_internal
+            - authz_communities
+        restart: unless-stopped
+        depends_on:
+            keycloak-db:
+                condition: service_healthy
 
-  # PostgreSQL for Communities Service
-  communities-db:
-    image: postgres:17
-    container_name: communities-db
-    environment:
-      POSTGRES_DB: ${COMMUNITIES_DATABASE_NAME:-communities}
-      POSTGRES_USER: ${COMMUNITIES_DATABASE_USER:-communities}
-      POSTGRES_PASSWORD: ${COMMUNITIES_DATABASE_PASSWORD:-communities}
-    ports:
-      - "${COMMUNITIES_DATABASE_PORT:-5433}:5432"
-    volumes:
-      - communities_postgres_data:/var/lib/postgresql/data
-      - ./communities/compose/init-uuid.sql:/docker-entrypoint-initdb.d/01-init-uuid.sql
-    networks:
-      - authz_communities
-    restart: unless-stopped
-    healthcheck:
-      test:
-        ["CMD-SHELL", "pg_isready -U ${COMMUNITIES_DATABASE_USER:-communities}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+    # PostgreSQL for Communities Service
+    communities-db:
+        image: postgres:17
+        container_name: communities-db
+        environment:
+            POSTGRES_DB: ${COMMUNITIES_DATABASE_NAME:-communities}
+            POSTGRES_USER: ${COMMUNITIES_DATABASE_USER:-communities}
+            POSTGRES_PASSWORD: ${COMMUNITIES_DATABASE_PASSWORD:-communities}
+        ports:
+            - "${COMMUNITIES_DATABASE_PORT:-5433}:5432"
+        volumes:
+            - communities_postgres_data:/var/lib/postgresql/data
+            - ./communities/compose/init-uuid.sql:/docker-entrypoint-initdb.d/01-init-uuid.sql
+        networks:
+            - authz_communities
+        restart: unless-stopped
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "pg_isready -U ${COMMUNITIES_DATABASE_USER:-communities}",
+                ]
+            interval: 5s
+            timeout: 5s
+            retries: 5
 
-  # MongoDB for Message Service
-  message-db:
-    image: mongo:7
-    container_name: messages-mongo
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_DATABASE: messages
-    volumes:
-      - message_mongo_data:/data/db
-    networks:
-      - message_network
-    restart: unless-stopped
+    # MongoDB for Message Service
+    message-db:
+        image: mongo:7
+        container_name: messages-mongo
+        ports:
+            - "27017:27017"
+        environment:
+            MONGO_INITDB_DATABASE: messages
+        volumes:
+            - message_mongo_data:/data/db
+        networks:
+            - message_network
+        restart: unless-stopped
 
-  # RabbitMQ
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    networks:
-      - authz_communities
-      - message_network
-      - realtime_network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    # RabbitMQ
+    rabbitmq:
+        image: rabbitmq:3-management
+        container_name: rabbitmq
+        environment:
+            RABBITMQ_DEFAULT_USER: guest
+            RABBITMQ_DEFAULT_PASS: guest
+        ports:
+            - "5672:5672"
+            - "15672:15672"
+        volumes:
+            - rabbitmq_data:/var/lib/rabbitmq
+        networks:
+            - authz_communities
+            - message_network
+            - realtime_network
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
-  # SpiceDB (Authorization)
-  spicedb:
-    image: authzed/spicedb:latest
-    container_name: spicedb
-    command: serve
-    ports:
-      - "50051:50051"
-      - "8443:8443"
-    environment:
-      - SPICEDB_GRPC_PRESHARED_KEY=foobar
-      - SPICEDB_DATASTORE_ENGINE=memory
-      - SPICEDB_LOG_LEVEL=debug
-    networks:
-      - authz_communities
-    restart: unless-stopped
+    # SpiceDB (Authorization)
+    spicedb:
+        image: authzed/spicedb:latest
+        container_name: spicedb
+        command: serve
+        ports:
+            - "50051:50051"
+            - "8443:8443"
+        environment:
+            - SPICEDB_GRPC_PRESHARED_KEY=foobar
+            - SPICEDB_DATASTORE_ENGINE=memory
+            - SPICEDB_LOG_LEVEL=debug
+        networks:
+            - authz_communities
+        restart: unless-stopped
 
-  # SpiceDB Schema Loader
-  spicedb-schema-loader:
-    image: authzed/zed:latest-debug
-    container_name: spicedb-schema-loader
-    depends_on:
-      - spicedb
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        sleep 5
-        zed schema write --endpoint=spicedb:50051 --insecure --token=foobar /beep/beep.zed
-        echo 'Schema loaded successfully'
-    volumes:
-      - ./authz/authzed/beep.zed:/beep/beep.zed
-    networks:
-      - authz_communities
-    restart: "no"
+    schema-loader:
+        image: authzed/zed:latest-debug
+        container_name: schema-loader
+        depends_on:
+            - spicedb
+        entrypoint: ["/bin/sh", "-c"]
+        command:
+            - |
+                sleep 5
+                zed schema write --endpoint=spicedb:50051 --insecure --token=foobar /beep/beep.zed
+                echo 'Schema loaded successfully'
+        volumes:
+            - ./authz/authzed/beep.zed:/beep/beep.zed
+        networks:
+            - authz_communities
+        restart: "no"
 
-  # Redis (for Real-time service deduplication)
-  redis:
-    image: redis:7-alpine
-    container_name: redis
-    ports:
-      - "6379:6379"
-    command: ["redis-server", "--save", "", "--appendonly", "no"]
-    networks:
-      - realtime_network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+    # SpiceDB Schema Loader
+    spicedb-schema-loader:
+        image: authzed/zed:latest-debug
+        container_name: spicedb-schema-loader
+        depends_on:
+            - spicedb
+        entrypoint: ["/bin/sh", "-c"]
+        command:
+            - |
+                sleep 5
+                zed schema write --endpoint=spicedb:50051 --insecure --token=foobar /beep/beep.zed
+                echo 'Schema loaded successfully'
+        volumes:
+            - ./authz/authzed/beep.zed:/beep/beep.zed
+        networks:
+            - authz_communities
+        restart: "no"
 
-  # OpenTelemetry Collector
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.114.0
-    container_name: otel-collector
-    command: ["--config=/etc/otel-config.yaml"]
-    ports:
-      - "4317:4317" # OTLP gRPC receiver
-      - "4318:4318" # OTLP HTTP receiver
-      - "8888:8888" # Prometheus metrics endpoint
-    volumes:
-      - ./user/otel-config.yaml:/etc/otel-config.yaml:ro
-    networks:
-      - user_internal
-      - authz_communities
-      - message_network
-      - realtime_network
-    restart: unless-stopped
+    # Redis (for Real-time service deduplication)
+    redis:
+        image: redis:7-alpine
+        container_name: redis
+        ports:
+            - "6379:6379"
+        command: ["redis-server", "--save", "", "--appendonly", "no"]
+        networks:
+            - realtime_network
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 5s
+            timeout: 3s
+            retries: 5
 
-  # RabbitMQ Init (declare exchanges and queues)
-  rabbitmq-init:
-    image: rabbitmq:3-management
-    container_name: rabbitmq-init
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    volumes:
-      - ./communities/compose/rabbitmq-init.sh:/rabbitmq-init.sh
-    entrypoint: ["/bin/bash", "/rabbitmq-init.sh"]
-    environment:
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_USER: guest
-      RABBITMQ_PASS: guest
-    networks:
-      - authz_communities
-    restart: "no"
+    # OpenTelemetry Collector
+    otel-collector:
+        image: otel/opentelemetry-collector-contrib:0.114.0
+        container_name: otel-collector
+        command: ["--config=/etc/otel-config.yaml"]
+        ports:
+            - "4317:4317" # OTLP gRPC receiver
+            - "4318:4318" # OTLP HTTP receiver
+            - "8888:8888" # Prometheus metrics endpoint
+        volumes:
+            - ./user/otel-config.yaml:/etc/otel-config.yaml:ro
+        networks:
+            - user_internal
+            - authz_communities
+            - message_network
+            - realtime_network
+        restart: unless-stopped
 
-  # =============================================================================
-  # APPLICATION SERVICES (peuvent être exclus avec des profils)
-  # =============================================================================
+    # RabbitMQ Init (declare exchanges and queues)
+    rabbitmq-init:
+        image: rabbitmq:3-management
+        container_name: rabbitmq-init
+        depends_on:
+            rabbitmq:
+                condition: service_healthy
+        volumes:
+            - ./communities/compose/rabbitmq-init.sh:/rabbitmq-init.sh
+        entrypoint: ["/bin/bash", "/rabbitmq-init.sh"]
+        environment:
+            RABBITMQ_HOST: rabbitmq
+            RABBITMQ_USER: guest
+            RABBITMQ_PASS: guest
+        networks:
+            - authz_communities
+        restart: "no"
 
-  # User Migrations
-  user-migrations:
-    build:
-      context: ./user
-      dockerfile: Dockerfile
-      target: api
-    container_name: user-migrations
-    command: ["migrate"]
-    environment:
-      DATABASE_URL: postgres://${USER_DB_USER:-userservice}:${USER_DB_PASSWORD:-userservice}@user-db:5432/${USER_DB:-userservice}
-      SERVER_HOST: 0.0.0.0
-      SERVER_PORT: 3000
-      HEALTH_PORT: 3001
-      KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
-      KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-myrealm}
-      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-myclient}
-      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-secret}
-    depends_on:
-      user-db:
-        condition: service_healthy
-    networks:
-      - user_internal
-    restart: "no"
-    profiles:
-      - communities
-      - message
-      - realtime
-      - authz
-      - client
-      - all
+    # =============================================================================
+    # APPLICATION SERVICES (peuvent être exclus avec des profils)
+    # =============================================================================
 
-  # User Service
-  user-api:
-    build:
-      context: ./user
-      dockerfile: Dockerfile
-      target: api
-    container_name: user-service
-    environment:
-      # Database
-      USER_DB: ${USER_DB:-userservice}
-      USER_DB_USER: ${USER_DB_USER:-userservice}
-      USER_DB_PASSWORD: ${USER_DB_PASSWORD:-userservice}
-      DATABASE_URL: postgres://${USER_DB_USER:-userservice}:${USER_DB_PASSWORD:-userservice}@user-db:5432/${USER_DB:-userservice}
-      # Server
-      SERVER_HOST: 0.0.0.0
-      SERVER_PORT: ${SERVER_PORT:-3000}
-      HEALTH_PORT: ${HEALTH_PORT:-3001}
-      # Keycloak
-      KEYCLOAK_DB: ${KEYCLOAK_DB:-keycloak}
-      KEYCLOAK_DB_USER: ${KEYCLOAK_DB_USER:-keycloak}
-      KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak}
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
-      KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
-      KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-myrealm}
-      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-user-service}
-      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-ABvykyIUah2CcQPiRcvcgd7GA4MrEdx4}
-      # Other
-      JWT_SECRET: ${JWT_SECRET:-mysecret}
-      RUST_LOG: ${RUST_LOG:-info}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
-    ports:
-      - "3000:3000"
-      - "3001:3001"
-    networks:
-      - user_internal
-      - authz_communities
-    restart: unless-stopped
-    depends_on:
-      user-migrations:
-        condition: service_completed_successfully
-      keycloak:
-        condition: service_started
-      otel-collector:
-        condition: service_started
-    profiles:
-      - communities
-      - message
-      - realtime
-      - authz
-      - client
-      - all
+    # User Migrations
+    user-migrations:
+        build:
+            context: ./user
+            dockerfile: Dockerfile
+            target: api
+        container_name: user-migrations
+        command: ["migrate"]
+        environment:
+            DATABASE_URL: postgres://${USER_DB_USER:-userservice}:${USER_DB_PASSWORD:-userservice}@user-db:5432/${USER_DB:-userservice}
+            SERVER_HOST: 0.0.0.0
+            SERVER_PORT: 3000
+            HEALTH_PORT: 3001
+            KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
+            KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}
+            KEYCLOAK_REALM: ${KEYCLOAK_REALM:-myrealm}
+            KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-myclient}
+            KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-secret}
+        depends_on:
+            user-db:
+                condition: service_healthy
+        networks:
+            - user_internal
+        restart: "no"
+        profiles:
+            - communities
+            - message
+            - realtime
+            - authz
+            - client
+            - all
 
-  # Communities Migrations
-  communities-migrations:
-    build:
-      context: ./communities
-      dockerfile: Dockerfile.migrations
-    container_name: communities-migrations
-    environment:
-      DATABASE_URL: postgres://${COMMUNITIES_DATABASE_USER:-communities}:${COMMUNITIES_DATABASE_PASSWORD:-communities}@communities-db:5432/${COMMUNITIES_DATABASE_NAME:-communities}
-    depends_on:
-      communities-db:
-        condition: service_healthy
-    networks:
-      - authz_communities
-    restart: "no"
-    profiles:
-      - user
-      - message
-      - realtime
-      - authz
-      - client
-      - all
+    # User Service
+    user-api:
+        build:
+            context: ./user
+            dockerfile: Dockerfile
+            target: api
+        container_name: user-service
+        environment:
+            # Database
+            USER_DB: ${USER_DB:-userservice}
+            USER_DB_USER: ${USER_DB_USER:-userservice}
+            USER_DB_PASSWORD: ${USER_DB_PASSWORD:-userservice}
+            DATABASE_URL: postgres://${USER_DB_USER:-userservice}:${USER_DB_PASSWORD:-userservice}@user-db:5432/${USER_DB:-userservice}
+            # Server
+            SERVER_HOST: 0.0.0.0
+            SERVER_PORT: ${SERVER_PORT:-3000}
+            HEALTH_PORT: ${HEALTH_PORT:-3001}
+            # Keycloak
+            KEYCLOAK_DB: ${KEYCLOAK_DB:-keycloak}
+            KEYCLOAK_DB_USER: ${KEYCLOAK_DB_USER:-keycloak}
+            KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak}
+            KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+            KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+            KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
+            KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}
+            KEYCLOAK_REALM: ${KEYCLOAK_REALM:-myrealm}
+            KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-user-service}
+            KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-ABvykyIUah2CcQPiRcvcgd7GA4MrEdx4}
+            # Other
+            JWT_SECRET: ${JWT_SECRET:-mysecret}
+            RUST_LOG: ${RUST_LOG:-info}
+            OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+        ports:
+            - "3000:3000"
+            - "3001:3001"
+        networks:
+            - user_internal
+            - authz_communities
+        restart: unless-stopped
+        depends_on:
+            user-migrations:
+                condition: service_completed_successfully
+            keycloak:
+                condition: service_started
+            otel-collector:
+                condition: service_started
+        profiles:
+            - communities
+            - message
+            - realtime
+            - authz
+            - client
+            - all
 
-  # Communities Service
-  communities-api:
-    build:
-      context: ./communities
-      dockerfile: Dockerfile
-    container_name: communities-service
-    environment:
-      # Database
-      DATABASE_HOST: communities-db
-      DATABASE_PORT: 5432
-      DATABASE_USER: ${COMMUNITIES_DATABASE_USER:-communities}
-      DATABASE_PASSWORD: ${COMMUNITIES_DATABASE_PASSWORD:-communities}
-      DATABASE_NAME: ${COMMUNITIES_DATABASE_NAME:-communities}
-      DATABASE_URL: postgres://${COMMUNITIES_DATABASE_USER:-communities}:${COMMUNITIES_DATABASE_PASSWORD:-communities}@communities-db:5432/${COMMUNITIES_DATABASE_NAME:-communities}
-      # Server Ports
-      API_PORT: ${COMMUNITIES_API_PORT:-8081}
-      HEALTH_PORT: ${COMMUNITIES_HEALTH_PORT:-8082}
-      # Services
-      SPICEDB_ENDPOINT: ${SPICEDB_ENDPOINT:-http://spicedb:50051}
-      SPICEDB_ENPOINT: ${SPICEDB_ENDPOINT:-http://spicedb:50051}
-      SPICEDB_TOKEN: ${SPICEDB_TOKEN:-foobar}
-      USER_SERVICE_URL: ${USER_SERVICE_URL:-http://user-service:3001}
-      # Keycloak
-      KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
-      KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-myrealm}
-      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-user-service}
-      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-ABvykyIUah2CcQPiRcvcgd7GA4MrEdx4}
-      # RabbitMQ
-      RABBIT_URI: ${RABBIT_URI:-amqp://guest:guest@rabbitmq:5672}
-      ROUTING_CONFIG_PATH: /config/routing.yaml
-      # CORS
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost,https://beep.ovh}
-    volumes:
-      - ./communities/config/routing.yaml:/config/routing.yaml
-    ports:
-      - "${COMMUNITIES_API_PORT:-8081}:${COMMUNITIES_API_PORT:-8081}"
-      - "${COMMUNITIES_HEALTH_PORT:-8082}:${COMMUNITIES_HEALTH_PORT:-8082}"
-      - "3003:8081"
-    networks:
-      - user_internal
-      - authz_communities
+    # Communities Migrations
+    communities-migrations:
+        build:
+            context: ./communities
+            dockerfile: Dockerfile.migrations
+        container_name: communities-migrations
+        environment:
+            DATABASE_URL: postgres://${COMMUNITIES_DATABASE_USER:-communities}:${COMMUNITIES_DATABASE_PASSWORD:-communities}@communities-db:5432/${COMMUNITIES_DATABASE_NAME:-communities}
+        depends_on:
+            communities-db:
+                condition: service_healthy
+        networks:
+            - authz_communities
+        restart: "no"
+        profiles:
+            - user
+            - message
+            - realtime
+            - authz
+            - client
+            - all
 
-    restart: unless-stopped
-    depends_on:
-      communities-migrations:
-        condition: service_completed_successfully
-      rabbitmq-init:
-        condition: service_completed_successfully
-    profiles:
-      - user
-      - message
-      - realtime
-      - authz
-      - client
-      - all
+    # Communities Service
+    communities-api:
+        build:
+            context: ./communities
+            dockerfile: Dockerfile
+        container_name: communities-service
+        environment:
+            # Database
+            DATABASE_HOST: communities-db
+            DATABASE_PORT: 5432
+            DATABASE_USER: ${COMMUNITIES_DATABASE_USER:-communities}
+            DATABASE_PASSWORD: ${COMMUNITIES_DATABASE_PASSWORD:-communities}
+            DATABASE_NAME: ${COMMUNITIES_DATABASE_NAME:-communities}
+            DATABASE_URL: postgres://${COMMUNITIES_DATABASE_USER:-communities}:${COMMUNITIES_DATABASE_PASSWORD:-communities}@communities-db:5432/${COMMUNITIES_DATABASE_NAME:-communities}
+            # Server Ports
+            API_PORT: ${COMMUNITIES_API_PORT:-8081}
+            HEALTH_PORT: ${COMMUNITIES_HEALTH_PORT:-8082}
+            # Services
+            SPICEDB_ENDPOINT: ${SPICEDB_ENDPOINT:-http://spicedb:50051}
+            SPICEDB_ENPOINT: ${SPICEDB_ENDPOINT:-http://spicedb:50051}
+            SPICEDB_TOKEN: ${SPICEDB_TOKEN:-foobar}
+            USER_SERVICE_URL: ${USER_SERVICE_URL:-http://user-service:3001}
+            # Keycloak
+            KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
+            KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}
+            KEYCLOAK_REALM: ${KEYCLOAK_REALM:-myrealm}
+            KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-user-service}
+            KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-ABvykyIUah2CcQPiRcvcgd7GA4MrEdx4}
+            # RabbitMQ
+            RABBIT_URI: ${RABBIT_URI:-amqp://guest:guest@rabbitmq:5672}
+            ROUTING_CONFIG_PATH: /config/routing.yaml
+            # CORS
+            CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost,https://beep.ovh}
+        volumes:
+            - ./communities/config/routing.yaml:/config/routing.yaml
+        ports:
+            - "${COMMUNITIES_API_PORT:-8081}:${COMMUNITIES_API_PORT:-8081}"
+            - "${COMMUNITIES_HEALTH_PORT:-8082}:${COMMUNITIES_HEALTH_PORT:-8082}"
+            - "3003:8081"
+        networks:
+            - user_internal
+            - authz_communities
 
-  # Message Service
-  message-api:
-    build:
-      context: ./message
-      dockerfile: Dockerfile
-    container_name: message-service
-    environment:
-      # Database
-      MONGODB_URI: mongodb://message-db:27017/messages
-      DATABASE_URI: mongodb://message-db:27017/messages
-      DATABASE_NAME: messages
-      # Server Ports
-      API_PORT: ${MESSAGE_API_PORT:-8083}
-      HEALTH_PORT: ${MESSAGE_HEALTH_PORT:-9091}
-      # JWT
-      JWT_SECRET_KEY: ${JWT_SECRET:-Key-Must-Be-at-least-32-bytes-in-length}
-      # RabbitMQ
-      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672}
-      ROUTING_CONFIG_PATH: /config/routing.yaml
-      # Keycloak
-      KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
-      KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-myrealm}
-      # CORS
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000,http://localhost,http://localhost:80,http://localhost:3002}
-    volumes:
-      - ./message/config/routing.yaml:/config/routing.yaml
-    ports:
-      - "${MESSAGE_API_PORT:-8083}:${MESSAGE_API_PORT:-8083}"
-      - "${MESSAGE_HEALTH_PORT:-9091}:${MESSAGE_HEALTH_PORT:-9091}"
-      - "3002:8083"
-    networks:
-      - message_network
-      - authz_communities
-      - user_internal
-    restart: unless-stopped
-    depends_on:
-      message-db:
-        condition: service_started
-      rabbitmq:
-        condition: service_healthy
-    profiles:
-      - user
-      - communities
-      - realtime
-      - authz
-      - client
-      - all
+        restart: unless-stopped
+        depends_on:
+            communities-migrations:
+                condition: service_completed_successfully
+            rabbitmq-init:
+                condition: service_completed_successfully
+        profiles:
+            - user
+            - message
+            - realtime
+            - authz
+            - client
+            - all
 
-  # Real-time Service
-  realtime-api:
-    build:
-      context: ./real-time
-      dockerfile: Dockerfile
-    container_name: realtime-service
-    ports:
-      - "${REALTIME_PORT:-4000}:4000"
-    environment:
-      # Phoenix
-      MIX_ENV: ${MIX_ENV:-prod}
-      PORT: 4000
-      SECRET_KEY_BASE: ${SECRET_KEY_BASE:-please_generate_a_secret_key_base_using_mix_phx_gen_secret}
-      PHX_HOST: ${PHX_HOST:-localhost}
-      KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-myrealm}
-      REDIS_URL: redis://localhost:6379/0
-      SFU_GRPC_ADDR: ${SFU_GRPC_ADDR:-localhost:50052}
-      RABBIT_URI: amqp://guest:guest@localhost:5672
-    network_mode: host
-    restart: unless-stopped
-    depends_on:
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    profiles:
-      - user
-      - communities
-      - message
-      - authz
-      - client
-      - all
+    # Message Service
+    message-api:
+        build:
+            context: ./message
+            dockerfile: Dockerfile
+        container_name: message-service
+        environment:
+            # Database
+            MONGODB_URI: mongodb://message-db:27017/messages
+            DATABASE_URI: mongodb://message-db:27017/messages
+            DATABASE_NAME: messages
+            # Server Ports
+            API_PORT: ${MESSAGE_API_PORT:-8083}
+            HEALTH_PORT: ${MESSAGE_HEALTH_PORT:-9091}
+            # JWT
+            JWT_SECRET_KEY: ${JWT_SECRET:-Key-Must-Be-at-least-32-bytes-in-length}
+            # RabbitMQ
+            RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672}
+            ROUTING_CONFIG_PATH: /config/routing.yaml
+            # Keycloak
+            KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
+            KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}
+            KEYCLOAK_REALM: ${KEYCLOAK_REALM:-myrealm}
+            # CORS
+            CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000,http://localhost,http://localhost:80,http://localhost:3002}
+            SPICEDB_ENDPOINT: spicedb:50051
+            # SpiceDB token (example)
+            SPICEDB_TOKEN: foobar
+        volumes:
+            - ./message/config/routing.yaml:/config/routing.yaml
+        ports:
+            - "${MESSAGE_API_PORT:-8083}:${MESSAGE_API_PORT:-8083}"
+            - "${MESSAGE_HEALTH_PORT:-9091}:${MESSAGE_HEALTH_PORT:-9091}"
+            - "3002:8083"
+        networks:
+            - message_network
+            - authz_communities
+            - user_internal
+        restart: unless-stopped
+        depends_on:
+            message-db:
+                condition: service_started
+            rabbitmq:
+                condition: service_healthy
+        profiles:
+            - user
+            - communities
+            - realtime
+            - authz
+            - client
+            - all
 
-  sfu:
-    build:
-      context: ./media-server
-      dockerfile: Dockerfile
-    container_name: media-server-sfu
-    restart: unless-stopped
-    network_mode: host
-    command: ["/app/sfu-server", "-f", "--grpc-addr", "127.0.0.1:50052"]
-    profiles:
-      - user
-      - communities
-      - message
-      - authz
-      - client
-      - all
+    # Real-time Service
+    realtime-api:
+        build:
+            context: ./real-time
+            dockerfile: Dockerfile
+        container_name: realtime-service
+        ports:
+            - "${REALTIME_PORT:-4000}:4000"
+        environment:
+            # Phoenix
+            MIX_ENV: ${MIX_ENV:-prod}
+            PORT: 4000
+            SECRET_KEY_BASE: ${SECRET_KEY_BASE:-please_generate_a_secret_key_base_using_mix_phx_gen_secret}
+            PHX_HOST: ${PHX_HOST:-localhost}
+            KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
+            KEYCLOAK_REALM: ${KEYCLOAK_REALM:-myrealm}
+            REDIS_URL: redis://localhost:6379/0
+            SFU_GRPC_ADDR: ${SFU_GRPC_ADDR:-localhost:50052}
+            RABBIT_URI: amqp://guest:guest@localhost:5672
+        network_mode: host
+        restart: unless-stopped
+        depends_on:
+            redis:
+                condition: service_healthy
+            rabbitmq:
+                condition: service_healthy
+        profiles:
+            - user
+            - communities
+            - message
+            - authz
+            - client
+            - all
 
-  # Authz Listeners
-  authz-listeners:
-    build:
-      context: ./authz
-      dockerfile: Dockerfile
-    container_name: authz-listeners
-    environment:
-      - RABBIT_URI=amqp://guest:guest@rabbitmq:5672
-      - RABBIT_CONSUMER_TAG_SUFFIX=${RABBIT_CONSUMER_TAG_SUFFIX:-default}
-      - AUTHZED_ENDPOINT=spicedb:50051
-      - AUTHZED_TOKEN=foobar
-      - AUTHZED_INSECURE=true
-      - QUEUE_CONFIG_PATH=/app/config/queues.json
-      - RUST_LOG=${RUST_LOG:-info}
-    volumes:
-      - ./authz/config/queues.json:/app/config/queues.json:ro
-    networks:
-      - authz_communities
-    restart: unless-stopped
-    depends_on:
-      spicedb:
-        condition: service_started
-      rabbitmq-init:
-        condition: service_completed_successfully
-    profiles:
-      - user
-      - communities
-      - message
-      - realtime
-      - client
-      - all
+    sfu:
+        build:
+            context: ./media-server
+            dockerfile: Dockerfile
+        container_name: media-server-sfu
+        restart: unless-stopped
+        network_mode: host
+        command: ["/app/sfu-server", "-f", "--grpc-addr", "127.0.0.1:50052"]
+        profiles:
+            - user
+            - communities
+            - message
+            - authz
+            - client
+            - all
 
-  # Client (Frontend)
-  client:
-    build:
-      context: ./client
-      args:
-        - VITE_KEYCLOAK_CLIENT_ID=${VITE_KEYCLOAK_CLIENT_ID:-frontend}
-        - VITE_KEYCLOAK_AUTHORITY=${VITE_KEYCLOAK_AUTHORITY:-http://localhost:8080/realms/myrealm}
-        - VITE_USER_SERVICE_URL=${VITE_USER_SERVICE_URL:-http://localhost:3000}
-        - VITE_COMMUNITY_SERVICE_URL=${VITE_COMMUNITY_SERVICE_URL:-http://localhost:3003}
-        - VITE_REAL_TIME_URL=${VITE_REAL_TIME_URL:-http://localhost:4000}
-        - VITE_WEBRTC_BASE=${VITE_WEBRTC_BASE:-http://localhost:8080}
-        - VITE_MESSAGE_SERVICE_URL=${VITE_MESSAGE_SERVICE_URL:-http://localhost:3002}
-      dockerfile: Dockerfile
-    container_name: client
-    ports:
-      - "5173:5173"
-    environment:
-      - NGINX_PORT=5173
-    networks:
-      - user_internal
-      - authz_communities
-    restart: unless-stopped
-    profiles:
-      - user
-      - communities
-      - message
-      - realtime
-      - authz
-      - all
+    # Authz Listeners
+    authz-listeners:
+        build:
+            context: ./authz
+            dockerfile: Dockerfile
+        container_name: authz-listeners
+        environment:
+            - RABBIT_URI=amqp://guest:guest@rabbitmq:5672
+            - RABBIT_CONSUMER_TAG_SUFFIX=${RABBIT_CONSUMER_TAG_SUFFIX:-default}
+            - AUTHZED_ENDPOINT=spicedb:50051
+            - AUTHZED_TOKEN=foobar
+            - AUTHZED_INSECURE=true
+            - QUEUE_CONFIG_PATH=/app/config/queues.json
+            - RUST_LOG=${RUST_LOG:-info}
+        volumes:
+            - ./authz/config/queues.json:/app/config/queues.json:ro
+        networks:
+            - authz_communities
+        restart: unless-stopped
+        depends_on:
+            spicedb:
+                condition: service_started
+            rabbitmq-init:
+                condition: service_completed_successfully
+        profiles:
+            - user
+            - communities
+            - message
+            - realtime
+            - client
+            - all
+
+    # Client (Frontend)
+    client:
+        build:
+            context: ./client
+            args:
+                - VITE_KEYCLOAK_CLIENT_ID=${VITE_KEYCLOAK_CLIENT_ID:-frontend}
+                - VITE_KEYCLOAK_AUTHORITY=${VITE_KEYCLOAK_AUTHORITY:-http://localhost:8080/realms/myrealm}
+                - VITE_USER_SERVICE_URL=${VITE_USER_SERVICE_URL:-http://localhost:3000}
+                - VITE_COMMUNITY_SERVICE_URL=${VITE_COMMUNITY_SERVICE_URL:-http://localhost:3003}
+                - VITE_REAL_TIME_URL=${VITE_REAL_TIME_URL:-http://localhost:4000}
+                - VITE_WEBRTC_BASE=${VITE_WEBRTC_BASE:-http://localhost:8080}
+                - VITE_MESSAGE_SERVICE_URL=${VITE_MESSAGE_SERVICE_URL:-http://localhost:3002}
+            dockerfile: Dockerfile
+        container_name: client
+        ports:
+            - "5173:5173"
+        environment:
+            - NGINX_PORT=5173
+        networks:
+            - user_internal
+            - authz_communities
+        restart: unless-stopped
+        profiles:
+            - user
+            - communities
+            - message
+            - realtime
+            - authz
+            - all
 
 volumes:
-  user_postgres_data:
-  keycloak_postgres_data:
-  communities_postgres_data:
-  message_mongo_data:
-  rabbitmq_data:
+    user_postgres_data:
+    keycloak_postgres_data:
+    communities_postgres_data:
+    message_mongo_data:
+    rabbitmq_data:
 
 networks:
-  user_internal:
-    driver: bridge
-  authz_communities:
-    driver: bridge
-  message_network:
-    driver: bridge
-  realtime_network:
-    driver: bridge
+    user_internal:
+        driver: bridge
+    authz_communities:
+        driver: bridge
+    message_network:
+        driver: bridge
+    realtime_network:
+        driver: bridge
