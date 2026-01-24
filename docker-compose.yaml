@@ -519,6 +519,91 @@ services:
       - client
       - all
 
+  # Content setup
+  content-setup:
+    build: 
+      context: ./content
+      dockerfile: Dockerfile-setup
+    command: ["/bin/setup", "setup-s3", "env"]
+    network_mode: host
+    environment:
+      - GARAGE_CONFIG_FILE=/etc/garage.toml
+      - ENV_FILE=/opt/app/.env
+    volumes:
+      - ./content/dev/garage.toml:/etc/garage.toml
+      - garage_meta:/tmp/meta/
+      - garage_data:/tmp/data/
+      - type: bind
+        source: ./content/.env
+        target: /opt/app/.env
+        bind:
+          create_host_path: false
+    profiles:
+      - user
+      - communities
+      - message
+      - realtime
+      - authz
+      - all
+  garage:
+    image: docker.io/dxflrs/garage:v2.1.0
+    ports:
+      - "3900:3900"
+      - "3901:3901"
+      - "3902:3902"
+      - "3903:3903"
+    restart: unless-stopped
+    networks:
+      - garage_network
+    volumes:
+      - ./content/dev/garage.toml:/etc/garage.toml
+      - garage_meta:/tmp/meta/
+      - garage_data:/tmp/data/
+    profiles:
+      - user
+      - communities
+      - message
+      - realtime
+      - authz
+      - all
+
+  content:
+    build:
+      context: ./content
+      dockerfile: Dockerfile
+    ports:
+      - "3004:3004"
+    env_file:
+      - ./content/.env
+    networks:
+      - garage_network
+    depends_on:
+      content-setup:
+        condition: service_completed_successfully
+    profiles:
+      - user
+      - communities
+      - message
+      - realtime
+      - authz
+      - all
+
+  garage-webui:
+    image: khairul169/garage-webui:latest
+    container_name: garage-webui
+    restart: unless-stopped
+    networks:
+      - garage_network
+    volumes:
+      - ./content/dev/garage.toml:/etc/garage.toml:ro
+    ports:
+      - 3909:3909
+    environment:
+      API_BASE_URL: "http://garage:3903"
+      S3_ENDPOINT_URL: "http://garage:3900"
+    profiles:
+      - all
+
   # Client (Frontend)
   client:
     build:
@@ -555,6 +640,8 @@ volumes:
   communities_postgres_data:
   message_mongo_data:
   rabbitmq_data:
+  garage_meta:
+  garage_data:
 
 networks:
   user_internal:
@@ -564,4 +651,6 @@ networks:
   message_network:
     driver: bridge
   realtime_network:
+    driver: bridge
+  garage_network:
     driver: bridge

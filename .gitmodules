@@ -19,3 +19,6 @@
 [submodule "media-server"]
 	path = media-server
 	url = git@github.com:beep-industries/media-server.git
+[submodule "content"]
+	path = content
+	url = git@github.com:beep-industries/content.git
