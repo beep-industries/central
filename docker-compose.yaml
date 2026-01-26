@@ -367,9 +367,8 @@ services:
     volumes:
       - ./communities/config/routing.yaml:/config/routing.yaml
     ports:
-      - "${COMMUNITIES_API_PORT:-8081}:${COMMUNITIES_API_PORT:-8081}"
+      - "${COMMUNITIES_API_PORT:-3003}:${COMMUNITIES_API_PORT:-3003}"
       - "${COMMUNITIES_HEALTH_PORT:-8082}:${COMMUNITIES_HEALTH_PORT:-8082}"
-      - "3003:8081"
     networks:
       - user_internal
       - authz_communities
