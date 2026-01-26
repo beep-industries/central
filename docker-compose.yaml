@@ -525,20 +525,17 @@ services:
     build: 
       context: ./content
       dockerfile: Dockerfile-setup
-    command: ["/bin/setup", "setup-s3", "env"]
+    command: ["/bin/setup", "setup", "env"]
     network_mode: host
     environment:
       - GARAGE_CONFIG_FILE=/etc/garage.toml
-      - ENV_FILE=/opt/app/.env
+      - ENV_FILE=/tmp/env/.env
+      - BUCKET_ENDPOINT=http://0.0.0.0:3900
     volumes:
       - ./content/dev/garage.toml:/etc/garage.toml
-      - garage_meta:/tmp/meta/
-      - garage_data:/tmp/data/
-      - type: bind
-        source: ./content/.env
-        target: /opt/app/.env
-        bind:
-          create_host_path: false
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
+      - ./content/local.env/:/tmp/env/
     profiles:
       - user
       - communities
@@ -558,8 +555,8 @@ services:
       - garage_network
     volumes:
       - ./content/dev/garage.toml:/etc/garage.toml
-      - garage_meta:/tmp/meta/
-      - garage_data:/tmp/data/
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
     profiles:
       - user
       - communities
@@ -574,8 +571,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3004:3004"
-    env_file:
-      - ./content/.env
+    volumes:
+      - ./content/local.env/:/opt/app/
     networks:
       - garage_network
     depends_on:
