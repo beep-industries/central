@@ -539,6 +539,7 @@ services:
       - garage_data:/var/lib/garage/data
       - ./content/local.env/:/tmp/env/
     profiles:
+      - client
       - user
       - communities
       - message
@@ -560,6 +561,7 @@ services:
       - garage_meta:/var/lib/garage/meta
       - garage_data:/var/lib/garage/data
     profiles:
+      - client
       - user
       - communities
       - message
@@ -581,6 +583,7 @@ services:
       content-setup:
         condition: service_completed_successfully
     profiles:
+      - client
       - user
       - communities
       - message
