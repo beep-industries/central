@@ -346,7 +346,7 @@ services:
       DATABASE_NAME: ${COMMUNITIES_DATABASE_NAME:-communities}
       DATABASE_URL: postgres://${COMMUNITIES_DATABASE_USER:-communities}:${COMMUNITIES_DATABASE_PASSWORD:-communities}@communities-db:5432/${COMMUNITIES_DATABASE_NAME:-communities}
       # Server Ports
-      API_PORT: ${COMMUNITIES_API_PORT:-8081}
+      API_PORT: ${COMMUNITIES_API_PORT:-3003}
       HEALTH_PORT: ${COMMUNITIES_HEALTH_PORT:-8082}
       # Services
       SPICEDB_ENDPOINT: ${SPICEDB_ENDPOINT:-http://spicedb:50051}
@@ -412,6 +412,8 @@ services:
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-myrealm}
       # CORS
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000,http://localhost,http://localhost:80,http://localhost:3002}
+      SPICEDB_TOKEN: foobar
+      SPICEDB_ENDPOINT: spicedb:50051
     volumes:
       - ./message/config/routing.yaml:/config/routing.yaml
     ports:
