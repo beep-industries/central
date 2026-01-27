@@ -241,6 +241,7 @@ services:
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-myrealm}
       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-myclient}
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-secret}
+      CONTENT_SERVICE_URL: ${CONTENT_SERVICE_URL:-http://content:3004}
     depends_on:
       user-db:
         condition: service_healthy
@@ -287,11 +288,13 @@ services:
       JWT_SECRET: ${JWT_SECRET:-mysecret}
       RUST_LOG: ${RUST_LOG:-info}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      CONTENT_SERVICE_URL: ${CONTENT_SERVICE_URL:-http://content:3004}
     ports:
       - "3000:3000"
       - "3001:3001"
     networks:
       - user_internal
+      - garage_network
       - authz_communities
     restart: unless-stopped
     depends_on:
@@ -525,21 +528,19 @@ services:
     build: 
       context: ./content
       dockerfile: Dockerfile-setup
-    command: ["/bin/setup", "setup-s3", "env"]
+    command: ["/bin/setup", "setup", "env"]
     network_mode: host
     environment:
       - GARAGE_CONFIG_FILE=/etc/garage.toml
-      - ENV_FILE=/opt/app/.env
+      - ENV_FILE=/tmp/env/.env
+      - BUCKET_ENDPOINT=http://0.0.0.0:3900
     volumes:
       - ./content/dev/garage.toml:/etc/garage.toml
-      - garage_meta:/tmp/meta/
-      - garage_data:/tmp/data/
-      - type: bind
-        source: ./content/.env
-        target: /opt/app/.env
-        bind:
-          create_host_path: false
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
+      - ./content/local.env/:/tmp/env/
     profiles:
+      - client
       - user
       - communities
       - message
@@ -558,9 +559,10 @@ services:
       - garage_network
     volumes:
       - ./content/dev/garage.toml:/etc/garage.toml
-      - garage_meta:/tmp/meta/
-      - garage_data:/tmp/data/
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
     profiles:
+      - client
       - user
       - communities
       - message
@@ -574,14 +576,15 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3004:3004"
-    env_file:
-      - ./content/.env
+    volumes:
+      - ./content/local.env/:/opt/app/
     networks:
       - garage_network
     depends_on:
       content-setup:
         condition: service_completed_successfully
     profiles:
+      - client
       - user
       - communities
       - message
