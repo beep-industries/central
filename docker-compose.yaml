@@ -241,6 +241,7 @@ services:
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-myrealm}
       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-myclient}
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-secret}
+      CONTENT_SERVICE_URL: http://content:3004
     depends_on:
       user-db:
         condition: service_healthy
@@ -287,6 +288,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-mysecret}
       RUST_LOG: ${RUST_LOG:-info}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      CONTENT_SERVICE_URL: http://content:3004
     ports:
       - "3000:3000"
       - "3001:3001"
