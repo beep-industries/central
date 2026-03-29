@@ -12,9 +12,6 @@ processors:
     send_batch_size: 1024
 
 exporters:
-  debug:
-    verbosity: basic
-
   otlphttp/tempo:
     endpoint: http://tempo:4318
 
@@ -25,16 +22,19 @@ exporters:
     endpoint: http://loki:3100/otlp
 
 service:
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888
   pipelines:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlphttp/tempo, debug]
+      exporters: [otlphttp/tempo]
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [prometheusremotewrite, debug]
+      exporters: [prometheusremotewrite]
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlphttp/loki, debug]
+      exporters: [otlphttp/loki]

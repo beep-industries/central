@@ -238,7 +238,7 @@ services:
       - "3500:3000"
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: true
-      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - grafana_data:/var/lib/grafana
@@ -597,7 +597,7 @@ services:
 
   # Content setup
   content-setup:
-    build: 
+    build:
       context: ./content
       dockerfile: Dockerfile-setup
     command: ["/bin/setup", "setup", "env"]
