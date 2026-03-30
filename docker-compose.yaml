@@ -183,6 +183,91 @@ services:
       timeout: 3s
       retries: 5
 
+  # =============================================================================
+  # MONITORING STACK
+  # =============================================================================
+
+  # Tempo (distributed tracing backend)
+  tempo:
+    image: grafana/tempo:2.7.2
+    container_name: tempo
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo/tempo-config.yaml:/etc/tempo.yaml:ro
+      - tempo_data:/var/tempo
+    networks:
+      - monitoring
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3200/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Prometheus (metrics backend)
+  prometheus:
+    image: prom/prometheus:v3.3.0
+    container_name: prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yaml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-remote-write-receiver"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - monitoring
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Loki (log aggregation backend)
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: loki
+    command: ["-config.file=/etc/loki/loki-config.yaml"]
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki_data:/loki
+    networks:
+      - monitoring
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3100/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Grafana (observability UI)
+  grafana:
+    image: grafana/grafana:12.0.0
+    container_name: grafana
+    ports:
+      - "3500:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: true
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    networks:
+      - monitoring
+    depends_on:
+      tempo:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+    restart: unless-stopped
+
   # OpenTelemetry Collector
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.114.0
@@ -193,12 +278,20 @@ services:
       - "4318:4318" # OTLP HTTP receiver
       - "8888:8888" # Prometheus metrics endpoint
     volumes:
-      - ./user/otel-config.yaml:/etc/otel-config.yaml:ro
+      - ./otel-collector/otel-config.yaml:/etc/otel-config.yaml:ro
     networks:
       - user_internal
       - authz_communities
       - message_network
       - realtime_network
+      - monitoring
+    depends_on:
+      tempo:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
     restart: unless-stopped
 
   # RabbitMQ Init (declare exchanges and queues)
@@ -525,7 +618,7 @@ services:
 
   # Content setup
   content-setup:
-    build: 
+    build:
       context: ./content
       dockerfile: Dockerfile-setup
     command: ["/bin/setup", "setup", "env"]
@@ -646,6 +739,10 @@ volumes:
   rabbitmq_data:
   garage_meta:
   garage_data:
+  tempo_data:
+  prometheus_data:
+  loki_data:
+  grafana_data:
 
 networks:
   user_internal:
@@ -657,4 +754,6 @@ networks:
   realtime_network:
     driver: bridge
   garage_network:
+    driver: bridge
+  monitoring:
     driver: bridge
