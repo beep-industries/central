@@ -197,11 +197,16 @@ services:
       - tempo_data:/var/tempo
     networks:
       - monitoring
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3200/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
   # Prometheus (metrics backend)
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.3.0
     container_name: prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yaml"
@@ -214,6 +219,11 @@ services:
       - prometheus_data:/prometheus
     networks:
       - monitoring
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
   # Loki (log aggregation backend)
@@ -228,11 +238,16 @@ services:
       - loki_data:/loki
     networks:
       - monitoring
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3100/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
   # Grafana (observability UI)
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:12.0.0
     container_name: grafana
     ports:
       - "3500:3000"
@@ -245,9 +260,12 @@ services:
     networks:
       - monitoring
     depends_on:
-      - tempo
-      - prometheus
-      - loki
+      tempo:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
     restart: unless-stopped
 
   # OpenTelemetry Collector
@@ -268,9 +286,12 @@ services:
       - realtime_network
       - monitoring
     depends_on:
-      - tempo
-      - prometheus
-      - loki
+      tempo:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
     restart: unless-stopped
 
   # RabbitMQ Init (declare exchanges and queues)
